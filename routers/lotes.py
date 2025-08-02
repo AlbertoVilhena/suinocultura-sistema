@@ -1,18 +1,50 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from utils.auth import verificar_token
+from sqlalchemy.orm import Session
+from utils.deps import get_db
+from models.lote import Lote
+from schemas import lote as schemas
 
 router = APIRouter()
-lotes_data = []
 
-class Lote(BaseModel):
-    nome: str
+@router.post("/lotes", response_model=schemas.LoteOut)
+def criar_lote(lote: schemas.LoteCreate, db: Session = Depends(get_db)):
+    novo_lote = Lote(**lote.dict())
+    db.add(novo_lote)
+    db.commit()
+    db.refresh(novo_lote)
+    return novo_lote
 
-@router.get("/lotes")
-def listar_lotes(email: str = Depends(verificar_token)):
-    return lotes_data
+@router.get("/lotes", response_model=list[schemas.LoteOut])
+def listar_lotes(db: Session = Depends(get_db)):
+    return db.query(Lote).all()
 
-@router.post("/lotes")
-def adicionar_lote(lote: Lote, email: str = Depends(verificar_token)):
-    lotes_data.append({ "nome": lote.nome, "usuario": email })
-    return {"mensagem": "Lote adicionado com sucesso"}
+@router.get("/lotes/{lote_id}", response_model=schemas.LoteOut)
+def buscar_lote(lote_id: int, db: Session = Depends(get_db)):
+    lote = db.query(Lote).filter(Lote.id == lote_id).first()
+    if not lote:
+        raise HTTPException(status_code=404, detail="Lote não encontrado")
+    return lote
+
+@router.put("/lotes/{lote_id}", response_model=schemas.LoteOut)
+def atualizar_lote(lote_id: int, lote_data: schemas.LoteUpdate, db: Session = Depends(get_db)):
+    lote = db.query(Lote).filter(Lote.id == lote_id).first()
+    if not lote:
+        raise HTTPException(status_code=404, detail="Lote não encontrado")
+
+    for key, value in lote_data.dict().items():
+        setattr(lote, key, value)
+
+    db.commit()
+    db.refresh(lote)
+    return lote
+
+@router.delete("/lotes/{lote_id}")
+def deletar_lote(lote_id: int, db: Session = Depends(get_db)):
+    lote = db.query(Lote).filter(Lote.id == lote_id).first()
+    if not lote:
+        raise HTTPException(status_code=404, detail="Lote não encontrado")
+    
+    db.delete(lote)
+    db.commit()
+    return {"mensagem": "Lote excluído com sucesso"}
+
