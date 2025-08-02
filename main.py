@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils.database import Base, engine
 from models import usuario, lote, pesagem  # importa todos os models
 from routers import usuarios, lotes, pesagens  # importa todos os routers
+from routers import alimentacoes
+from models import alimentacao
+
 
 # Criação do app deve vir antes de qualquer uso do app
 app = FastAPI()
@@ -24,6 +27,8 @@ Base.metadata.create_all(bind=engine)
 app.include_router(usuarios.router)
 app.include_router(lotes.router)
 app.include_router(pesagens.router)
+app.include_router(alimentacoes.router)  # 👈 Aqui entra o router de alimentação
+
 
 # Rota de saúde
 @app.get("/")
