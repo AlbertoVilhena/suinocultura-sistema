@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import usuarios, lotes
 from utils.database import Base, engine
-from models import usuario
+from models import usuario, lote
 
 Base.metadata.create_all(bind=engine)
 
