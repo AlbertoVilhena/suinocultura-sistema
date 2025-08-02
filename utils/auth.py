@@ -1,26 +1,36 @@
-from fastapi import Header, HTTPException
-import hashlib
-import uuid
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
 
-usuarios_db = {}
+# CONFIGURAÇÕES
+SECRET_KEY = "chave-muito-secreta-troque-isso"  # troque por algo seguro
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 1 hora
 
+# CONTEXTO PARA HASH DE SENHA
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# FUNÇÃO PARA CRIAR HASH
 def fake_hash(senha: str) -> str:
-    return hashlib.sha256(senha.encode()).hexdigest()
+    return pwd_context.hash(senha)
 
+# FUNÇÃO PARA VERIFICAR SENHA
 def fake_verify(senha: str, senha_hash: str) -> bool:
-    return fake_hash(senha) == senha_hash
+    return pwd_context.verify(senha, senha_hash)
 
-tokens = {}
-
+# FUNÇÃO PARA CRIAR TOKEN JWT
 def criar_token(email: str) -> str:
-    token = str(uuid.uuid4())
-    tokens[token] = email
-    return token
+    expira = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {"sub": email, "exp": expira}
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def verificar_token(authorization: str = Header(...)):
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=403, detail="Token inválido")
-    token = authorization.replace("Bearer ", "")
-    if token not in tokens:
-        raise HTTPException(status_code=403, detail="Token expirado ou inválido")
-    return tokens[token]
+# FUNÇÃO PARA VALIDAR TOKEN JWT
+def validar_token(token: str) -> str | None:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        return email
+    except JWTError:
+        return None
