@@ -19,3 +19,7 @@ app.add_middleware(
 
 app.include_router(usuarios.router)
 app.include_router(lotes.router)
+@app.get("/")
+def root():
+    return {"status": "ok"}
+
