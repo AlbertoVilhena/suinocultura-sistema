@@ -3,6 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import usuarios, lotes
 from utils.database import Base, engine
 from models import usuario, lote
+from routers import pesagens  # já deve existir lotes, usuarios, etc.
+from models import pesagem  # além de usuario, lote, etc.
+
+Base.metadata.create_all(bind=engine)
+
+app.include_router(pesagens.router)
+
 
 Base.metadata.create_all(bind=engine)
 
