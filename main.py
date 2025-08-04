@@ -6,6 +6,9 @@ from models import usuario, lote, pesagem  # importa todos os models
 from routers import usuarios, lotes, pesagens  # importa todos os routers
 from routers import alimentacoes
 from models import alimentacao
+from routers import vacinacoes
+from models import vacinacao
+
 
 
 # Criação do app deve vir antes de qualquer uso do app
@@ -34,3 +37,7 @@ app.include_router(alimentacoes.router)  # 👈 Aqui entra o router de alimenta�
 @app.get("/")
 def root():
     return {"status": "ok"}
+    
+Base.metadata.create_all(bind=engine)
+app.include_router(vacinacoes.router)
+
