@@ -8,6 +8,8 @@ from routers import alimentacoes
 from models import alimentacao
 from routers import vacinacoes
 from models import vacinacao
+from routers import relatorios
+app.include_router(relatorios.router)
 
 
 
