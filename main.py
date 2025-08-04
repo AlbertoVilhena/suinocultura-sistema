@@ -2,44 +2,34 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils.database import Base, engine
-from models import usuario, lote, pesagem  # importa todos os models
-from routers import usuarios, lotes, pesagens  # importa todos os routers
-from routers import alimentacoes
-from models import alimentacao
-from routers import vacinacoes
-from models import vacinacao
-from routers import relatorios
-app.include_router(relatorios.router)
+from models import usuario, lote, pesagem, alimentacao, vacinacao
+from routers import usuarios, lotes, pesagens, alimentacoes, vacinacoes, relatorios
 
-
-
-# Criação do app deve vir antes de qualquer uso do app
+# ✅ Criação da aplicação
 app = FastAPI()
 
-# Middleware CORS (libera acesso externo ao backend)
+# ✅ Middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, defina origens específicas
+    allow_origins=["*"],  # Em produção, defina domínios específicos
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Criação das tabelas no banco
+# ✅ Criação de todas as tabelas
 Base.metadata.create_all(bind=engine)
 
-# Rotas (routers)
+# ✅ Registro de rotas
 app.include_router(usuarios.router)
 app.include_router(lotes.router)
 app.include_router(pesagens.router)
-app.include_router(alimentacoes.router)  # 👈 Aqui entra o router de alimentação
+app.include_router(alimentacoes.router)
+app.include_router(vacinacoes.router)
+app.include_router(relatorios.router)  # 👈 Aqui entra o módulo de relatórios
 
-
-# Rota de saúde
+# ✅ Rota de teste
 @app.get("/")
 def root():
     return {"status": "ok"}
-    
-Base.metadata.create_all(bind=engine)
-app.include_router(vacinacoes.router)
 
