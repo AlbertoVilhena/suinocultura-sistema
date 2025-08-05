@@ -1,6 +1,9 @@
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException
+
 
 # CONFIGURAÇÕES
 SECRET_KEY = "chave-muito-secreta-troque-isso"  # troque por algo seguro
@@ -34,3 +37,12 @@ def validar_token(token: str) -> str | None:
         return email
     except JWTError:
         return None
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    email = validar_token(token)
+    if not email:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    return email
+
