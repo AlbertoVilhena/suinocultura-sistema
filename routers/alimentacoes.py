@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from utils.deps import get_db
-from utils.security import usuario_logado
+from utils.auth import get_current_user  # ✅ substitui usuario_logado
 from models.alimentacao import Alimentacao
 from models.lote import Lote
 from schemas import alimentacao as schemas
@@ -9,7 +9,11 @@ from schemas import alimentacao as schemas
 router = APIRouter()
 
 @router.post("/alimentacoes", response_model=schemas.AlimentacaoOut)
-def criar_alimentacao(al: schemas.AlimentacaoCreate, db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
+def criar_alimentacao(
+    al: schemas.AlimentacaoCreate,
+    db: Session = Depends(get_db),
+    usuario: str = Depends(get_current_user)  # ✅ atualizado
+):
     lote = db.query(Lote).filter(Lote.id == al.lote_id).first()
     if not lote:
         raise HTTPException(status_code=404, detail="Lote não encontrado")
@@ -21,18 +25,30 @@ def criar_alimentacao(al: schemas.AlimentacaoCreate, db: Session = Depends(get_d
     return nova
 
 @router.get("/alimentacoes", response_model=list[schemas.AlimentacaoOut])
-def listar_alimentacoes(db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
+def listar_alimentacoes(
+    db: Session = Depends(get_db),
+    usuario: str = Depends(get_current_user)  # ✅ atualizado
+):
     return db.query(Alimentacao).all()
 
 @router.get("/alimentacoes/{alimentacao_id}", response_model=schemas.AlimentacaoOut)
-def buscar_alimentacao(alimentacao_id: int, db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
+def buscar_alimentacao(
+    alimentacao_id: int,
+    db: Session = Depends(get_db),
+    usuario: str = Depends(get_current_user)  # ✅ atualizado
+):
     al = db.query(Alimentacao).filter(Alimentacao.id == alimentacao_id).first()
     if not al:
         raise HTTPException(status_code=404, detail="Registro não encontrado")
     return al
 
 @router.put("/alimentacoes/{alimentacao_id}", response_model=schemas.AlimentacaoOut)
-def atualizar_alimentacao(alimentacao_id: int, dados: schemas.AlimentacaoUpdate, db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
+def atualizar_alimentacao(
+    alimentacao_id: int,
+    dados: schemas.AlimentacaoUpdate,
+    db: Session = Depends(get_db),
+    usuario: str = Depends(get_current_user)  # ✅ atualizado
+):
     al = db.query(Alimentacao).filter(Alimentacao.id == alimentacao_id).first()
     if not al:
         raise HTTPException(status_code=404, detail="Registro não encontrado")
@@ -45,10 +61,15 @@ def atualizar_alimentacao(alimentacao_id: int, dados: schemas.AlimentacaoUpdate,
     return al
 
 @router.delete("/alimentacoes/{alimentacao_id}")
-def deletar_alimentacao(alimentacao_id: int, db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
+def deletar_alimentacao(
+    alimentacao_id: int,
+    db: Session = Depends(get_db),
+    usuario: str = Depends(get_current_user)  # ✅ atualizado
+):
     al = db.query(Alimentacao).filter(Alimentacao.id == alimentacao_id).first()
     if not al:
         raise HTTPException(status_code=404, detail="Registro não encontrado")
     db.delete(al)
     db.commit()
     return {"mensagem": "Registro de alimentação excluído com sucesso"}
+
