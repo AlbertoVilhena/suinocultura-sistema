@@ -9,12 +9,12 @@ from schemas import vacinacao as schemas
 router = APIRouter()
 
 @router.post("/vacinacoes", response_model=schemas.VacinacaoOut)
-def criar_vacinacao(v: schemas.VacinacaoCreate, db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
-    lote = db.query(Lote).filter(Lote.id == v.lote_id).first()
+def criar_vacinacao(vac: schemas.VacinacaoCreate, db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
+    lote = db.query(Lote).filter(Lote.id == vac.lote_id).first()
     if not lote:
         raise HTTPException(status_code=404, detail="Lote não encontrado")
 
-    nova = Vacinacao(**v.dict())
+    nova = Vacinacao(**vac.dict())
     db.add(nova)
     db.commit()
     db.refresh(nova)
@@ -28,14 +28,14 @@ def listar_vacinacoes(db: Session = Depends(get_db), usuario: str = Depends(usua
 def buscar_vacinacao(vacinacao_id: int, db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
     vac = db.query(Vacinacao).filter(Vacinacao.id == vacinacao_id).first()
     if not vac:
-        raise HTTPException(status_code=404, detail="Registro não encontrado")
+        raise HTTPException(status_code=404, detail="Vacinação não encontrada")
     return vac
 
 @router.put("/vacinacoes/{vacinacao_id}", response_model=schemas.VacinacaoOut)
 def atualizar_vacinacao(vacinacao_id: int, dados: schemas.VacinacaoUpdate, db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
     vac = db.query(Vacinacao).filter(Vacinacao.id == vacinacao_id).first()
     if not vac:
-        raise HTTPException(status_code=404, detail="Registro não encontrado")
+        raise HTTPException(status_code=404, detail="Vacinação não encontrada")
 
     for key, value in dados.dict().items():
         setattr(vac, key, value)
@@ -48,7 +48,7 @@ def atualizar_vacinacao(vacinacao_id: int, dados: schemas.VacinacaoUpdate, db: S
 def deletar_vacinacao(vacinacao_id: int, db: Session = Depends(get_db), usuario: str = Depends(usuario_logado)):
     vac = db.query(Vacinacao).filter(Vacinacao.id == vacinacao_id).first()
     if not vac:
-        raise HTTPException(status_code=404, detail="Registro não encontrado")
+        raise HTTPException(status_code=404, detail="Vacinação não encontrada")
     db.delete(vac)
     db.commit()
     return {"mensagem": "Registro de vacinação excluído com sucesso"}
