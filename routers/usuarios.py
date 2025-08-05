@@ -1,36 +1,43 @@
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from utils.deps import get_db
-from models import usuario as models
-from utils.auth import fake_hash, fake_verify, criar_token
+from utils.security import fake_hash, fake_verify, criar_token, usuario_logado
+from models.usuario import Usuario
+from schemas.usuario import UsuarioCreate, UsuarioLogin, UsuarioOut
 
 router = APIRouter()
 
-class Usuario(BaseModel):
-    email: str
-    senha: str
+# Criar novo usuário
+@router.post("/usuarios", response_model=UsuarioOut)
+def criar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
+    existente = db.query(Usuario).filter(Usuario.email == usuario.email).first()
+    if existente:
+        raise HTTPException(status_code=400, detail="E-mail já está em uso")
 
-@router.post("/usuarios")
-def criar_usuario(usuario: Usuario, db: Session = Depends(get_db)):
-    usuario_existente = db.query(models.Usuario).filter(models.Usuario.email == usuario.email).first()
-    if usuario_existente:
-        raise HTTPException(status_code=400, detail="Usuário já existe")
-
-    novo_usuario = models.Usuario(
+    novo = Usuario(
+        nome=usuario.nome,
         email=usuario.email,
         senha=fake_hash(usuario.senha)
     )
-    db.add(novo_usuario)
+    db.add(novo)
     db.commit()
-    db.refresh(novo_usuario)
-    return {"mensagem": "Usuário criado com sucesso"}
+    db.refresh(novo)
+    return novo
 
+# Login e geração de token
 @router.post("/login")
-def login(usuario: Usuario, db: Session = Depends(get_db)):
-    user = db.query(models.Usuario).filter(models.Usuario.email == usuario.email).first()
-    if not user or not fake_verify(usuario.senha, user.senha):
+def login(dados: UsuarioLogin, db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.email == dados.email).first()
+    if not user or not fake_verify(dados.senha, user.senha):
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
 
-    token = criar_token(usuario.email)
+    token = criar_token(user.email)
     return {"access_token": token, "token_type": "bearer"}
+
+# Obter dados do usuário logado
+@router.get("/me", response_model=UsuarioOut)
+def get_me(db: Session = Depends(get_db), email: str = Depends(usuario_logado)):
+    user = db.query(Usuario).filter(Usuario.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return user
